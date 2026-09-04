@@ -11,21 +11,65 @@ export default function AppTabs() {
     <NativeTabs
       backgroundColor={colors.background}
       indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}
+      labelVisibilityMode="labeled"
+      labelStyle={{
+        selected: {
+          color: colors.text,
+        },
+      }}
     >
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Dashboard</NativeTabs.Trigger.Label>
+
         <NativeTabs.Trigger.Icon
-          src={require("@/assets/images/tabIcons/home.png")}
-          renderingMode="template"
+          md={{
+            default: "home",
+            selected: "home",
+          }}
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="explore">
+      <NativeTabs.Trigger name="clientes">
         <NativeTabs.Trigger.Label>Clientes</NativeTabs.Trigger.Label>
+
         <NativeTabs.Trigger.Icon
-          src={require("@/assets/images/tabIcons/explore.png")}
-          renderingMode="template"
+          md={{
+            default: "group",
+            selected: "group",
+          }}
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="cargas">
+        <NativeTabs.Trigger.Label>Cargas</NativeTabs.Trigger.Label>
+
+        <NativeTabs.Trigger.Icon
+          md={{
+            default: "inventory_2",
+            selected: "inventory_2",
+          }}
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="pedidos">
+        <NativeTabs.Trigger.Label>Pedidos</NativeTabs.Trigger.Label>
+
+        <NativeTabs.Trigger.Icon
+          md={{
+            default: "shopping_cart",
+            selected: "shopping_cart",
+          }}
+        />
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="entregas">
+        <NativeTabs.Trigger.Label>Entregas</NativeTabs.Trigger.Label>
+
+        <NativeTabs.Trigger.Icon
+          md={{
+            default: "local_shipping",
+            selected: "local_shipping",
+          }}
         />
       </NativeTabs.Trigger>
     </NativeTabs>

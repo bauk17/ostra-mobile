@@ -1,10 +1,10 @@
-// cargas.tsx
+// pedidos.tsx
 import { Text, View } from "react-native";
 
-export default function CargasScreen() {
+export default function PedidosScreen() {
   return (
     <View>
-      <Text>Cargas</Text>
+      <Text>Pedidos</Text>
     </View>
   );
 }
