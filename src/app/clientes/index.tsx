@@ -1,163 +1,112 @@
+import { listarClientes } from "@/repositories/cliente-repository";
+import type { Cliente } from "@/types/cliente";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useSQLiteContext } from "expo-sqlite";
+import { useCallback, useMemo, useState } from "react";
 import {
   FlatList,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
 
-type Cliente = {
-  id: string;
-  documento: string;
-  nome: string;
-  endereco: string;
-  status: "Ativo" | "Pendente";
-  pedidos: number;
-  ultimoPedido: string;
-  telefone: string;
-  inadimplente?: boolean;
-  recorrente?: boolean;
-  valorPendente?: number;
-};
-
-const CLIENTES: Cliente[] = [
-  {
-    id: "1",
-    documento: "12.345.678/0001-90",
-    nome: "Supermercado Central",
-    endereco: "Av. Brasil, 1500 - Centro",
-    status: "Ativo",
-    pedidos: 32,
-    ultimoPedido: "Hoje, 10:30",
-    telefone: "(11) 98765-4321",
-    recorrente: true,
-  },
-  {
-    id: "2",
-    documento: "98.765.432/0001-11",
-    nome: "Restaurante Sabor Mar",
-    endereco: "Rua das Gaivotas, 42 - Orla",
-    status: "Ativo",
-    pedidos: 18,
-    ultimoPedido: "Ter, 17:00",
-    telefone: "(11) 97654-3210",
-    recorrente: true,
-  },
-  {
-    id: "3",
-    documento: "31.654.987/0001-22",
-    nome: "Mercadinho São José",
-    endereco: "Mercado Público, Box 12",
-    status: "Pendente",
-    pedidos: 8,
-    ultimoPedido: "Ontem, 16:45",
-    telefone: "(11) 96543-2109",
-    inadimplente: true,
-    valorPendente: 450,
-  },
-  {
-    id: "4",
-    documento: "45.678.901/0001-22",
-    nome: "Bistrô Oceano",
-    endereco: "Av. Beira Mar, 800",
-    status: "Ativo",
-    pedidos: 12,
-    ultimoPedido: "Há 2 dias",
-    telefone: "(11) 96543-2109",
-  },
-];
+import { SafeAreaView } from "react-native-safe-area-context";
 
 type Filtro = "Todos" | "Ativos" | "Inadimplentes" | "Recorrentes";
+
+function formatarData(data: string) {
+  const dataFormatada = new Date(data);
+
+  if (Number.isNaN(dataFormatada.getTime())) {
+    return "Data nao informada";
+  }
+
+  return dataFormatada.toLocaleDateString("pt-BR");
+}
 
 export default function ClientesScreen() {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("Todos");
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+
+  const db = useSQLiteContext();
+
+  useFocusEffect(
+    useCallback(() => {
+      async function carregarClientes() {
+        try {
+          const dados = await listarClientes(db);
+
+          setClientes(dados);
+        } catch (error) {
+          console.error("Erro ao carregar clientes:", error);
+        }
+      }
+
+      carregarClientes();
+    }, [db]),
+  );
 
   const clientesFiltrados = useMemo(() => {
     const texto = busca.toLowerCase().trim();
 
-    return CLIENTES.filter((cliente) => {
-      const correspondeBusca =
+    return clientes.filter((cliente) => {
+      return (
         !texto ||
         cliente.nome.toLowerCase().includes(texto) ||
-        cliente.documento.toLowerCase().includes(texto) ||
-        cliente.telefone.toLowerCase().includes(texto) ||
-        cliente.endereco.toLowerCase().includes(texto);
-
-      const correspondeFiltro =
-        filtro === "Todos" ||
-        (filtro === "Ativos" && cliente.status === "Ativo") ||
-        (filtro === "Inadimplentes" && cliente.inadimplente) ||
-        (filtro === "Recorrentes" && cliente.recorrente);
-
-      return correspondeBusca && correspondeFiltro;
+        (cliente.telefone ?? "").toLowerCase().includes(texto) ||
+        (cliente.endereco ?? "").toLowerCase().includes(texto) ||
+        (cliente.numero ?? "").toLowerCase().includes(texto) ||
+        (cliente.bairro ?? "").toLowerCase().includes(texto)
+      );
     });
-  }, [busca, filtro]);
+  }, [busca, clientes]);
 
   function renderCliente({ item }: { item: Cliente }) {
     return (
-      <Pressable style={styles.card}>
+      <Pressable
+        style={styles.card}
+        onPress={() => {
+          router.push({
+            pathname: "/clientes/editar-cliente",
+            params: {
+              id: item.id,
+            },
+          });
+        }}
+      >
         <View style={styles.cardTop}>
-          <Text style={styles.documento}>{item.documento}</Text>
+          <Text style={styles.documento}>ID: {item.id}</Text>
+          <View style={[styles.statusBadge, styles.statusAtivo]}>
+            <View style={[styles.statusDot, styles.dotAtivo]} />
 
-          <View
-            style={[
-              styles.statusBadge,
-              item.status === "Ativo"
-                ? styles.statusAtivo
-                : styles.statusPendente,
-            ]}
-          >
-            <View
-              style={[
-                styles.statusDot,
-                item.status === "Ativo" ? styles.dotAtivo : styles.dotPendente,
-              ]}
-            />
-
-            <Text
-              style={[
-                styles.statusText,
-                item.status === "Ativo"
-                  ? styles.statusTextAtivo
-                  : styles.statusTextPendente,
-              ]}
-            >
-              {item.status}
+            <Text style={[styles.statusText, styles.statusTextAtivo]}>
+              Cadastrado
             </Text>
           </View>
         </View>
 
         <Text style={styles.nome}>{item.nome}</Text>
 
-        <Text style={styles.endereco}>{item.endereco}</Text>
+        <Text style={styles.endereco}>
+          {item.endereco}, {item.numero} - {item.bairro}
+        </Text>
 
         <View style={styles.divider} />
 
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
-            <Ionicons name="cube-outline" size={13} color="#B6C2CF" />
-            <Text style={styles.infoText}>{item.pedidos} pedidos</Text>
+            <Ionicons name="calendar-outline" size={13} color="#B6C2CF" />
+            <Text style={styles.infoText}>
+              Cadastro: {formatarData(item.created_at)}
+            </Text>
           </View>
 
-          <View style={styles.infoItem}>
-            <Ionicons name="time-outline" size={13} color="#B6C2CF" />
-            <Text style={styles.infoText}>{item.ultimoPedido}</Text>
-          </View>
-
-          <Text style={styles.telefone}>{item.telefone}</Text>
+          <Text style={styles.telefone}>{item.telefone || "Sem telefone"}</Text>
         </View>
-
-        {item.inadimplente && item.valorPendente && (
-          <Text style={styles.pendenteValor}>
-            Pendente: R$ {item.valorPendente.toFixed(2).replace(".", ",")}
-          </Text>
-        )}
       </Pressable>
     );
   }

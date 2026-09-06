@@ -2,54 +2,49 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
 } from "react-native";
 
-import { supabase } from "@/services/supabase";
+import { criarCliente } from "@/repositories/cliente-repository";
 import * as Crypto from "expo-crypto";
+import { useSQLiteContext } from "expo-sqlite";
 
 export default function NovoClienteScreen() {
+  const db = useSQLiteContext();
+
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [endereco, setEndereco] = useState("");
+  const [numero, setNumero] = useState("");
+  const [bairro, setBairro] = useState("");
   const [erro, setErro] = useState("");
 
   async function cadastrarCliente() {
-    if (!nome.trim()) {
-      setErro("Informe o nome do cliente.");
-      return;
-    }
+    try {
+      const cliente = {
+        id: Crypto.randomUUID(),
+        nome: nome.trim(),
+        telefone: telefone.trim(),
+        endereco: endereco.trim(),
+        numero: numero.trim(),
+        bairro: bairro.trim(),
+        created_at: new Date().toISOString(),
+      };
 
-    setErro("");
+      await criarCliente(db, cliente);
 
-    const cliente = {
-      id: Crypto.randomUUID(),
-      nome: nome.trim(),
-      telefone: telefone.trim() || null,
-      endereco: endereco.trim() || null,
-      created_at: new Date().toISOString(),
-    };
-
-    console.log("Enviando cliente:", cliente);
-
-    const { error } = await supabase.from("clientes").insert(cliente);
-
-    if (error) {
+      router.back();
+    } catch (error) {
       console.error("Erro ao cadastrar cliente:", error);
-      setErro("Não foi possível cadastrar o cliente.");
-      return;
+      setErro("Ocorreu um erro ao cadastrar o cliente. Tente novamente.");
     }
-
-    console.log("Cliente cadastrado com sucesso!");
-
-    router.back();
   }
 
   return (
@@ -122,6 +117,32 @@ export default function NovoClienteScreen() {
               style={[styles.input, styles.multilineInput]}
               multiline
               textAlignVertical="top"
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Número</Text>
+
+            <TextInput
+              value={numero}
+              onChangeText={setNumero}
+              placeholder="Número do endereço"
+              placeholderTextColor="#718394"
+              style={styles.input}
+              keyboardType="number-pad"
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Bairro</Text>
+
+            <TextInput
+              value={bairro}
+              onChangeText={setBairro}
+              placeholder="Bairro"
+              placeholderTextColor="#718394"
+              style={styles.input}
+              autoCapitalize="words"
             />
           </View>
         </View>
