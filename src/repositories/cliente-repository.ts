@@ -1,9 +1,14 @@
+import { addToQueue, listQueue } from "@/services/sync-queue";
 import type { Cliente } from "@/types/cliente";
 import type { SQLiteDatabase } from "expo-sqlite";
 
-export async function criarCliente(db: SQLiteDatabase, cliente: Cliente) {
-  await db.runAsync(
-    `
+export async function criarCliente(
+  db: SQLiteDatabase,
+  cliente: Cliente,
+): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `
             INSERT into clientes (
                 id,
                 nome,
@@ -15,14 +20,22 @@ export async function criarCliente(db: SQLiteDatabase, cliente: Cliente) {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `,
-    cliente.id,
-    cliente.nome,
-    cliente.telefone,
-    cliente.endereco,
-    cliente.numero,
-    cliente.bairro,
-    cliente.created_at,
-  );
+      cliente.id,
+      cliente.nome,
+      cliente.telefone,
+      cliente.endereco,
+      cliente.numero,
+      cliente.bairro,
+      cliente.created_at,
+    );
+
+    await addToQueue(db, {
+      entity: "clientes",
+      entityId: cliente.id,
+      operation: "INSERT",
+      payload: cliente,
+    });
+  });
 }
 
 export async function listarClientes(db: SQLiteDatabase): Promise<Cliente[]> {
@@ -68,8 +81,9 @@ export async function atualizarCliente(
   db: SQLiteDatabase,
   cliente: Cliente,
 ): Promise<void> {
-  await db.runAsync(
-    `
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `
       UPDATE clientes
       SET
         nome = ?,
@@ -79,11 +93,43 @@ export async function atualizarCliente(
         bairro = ?
       WHERE id = ?
     `,
-    cliente.nome,
-    cliente.telefone,
-    cliente.endereco,
-    cliente.numero,
-    cliente.bairro,
-    cliente.id,
-  );
+      cliente.nome,
+      cliente.telefone,
+      cliente.endereco,
+      cliente.numero,
+      cliente.bairro,
+      cliente.id,
+    );
+
+    await addToQueue(db, {
+      entity: "clientes",
+      entityId: cliente.id,
+      operation: "UPDATE",
+      payload: cliente,
+    });
+  });
+}
+
+export async function deletarCliente(
+  db: SQLiteDatabase,
+  id: string,
+): Promise<void> {
+  await db.withTransactionAsync(async () => {
+    await db.runAsync(
+      `
+      DELETE FROM clientes
+      WHERE id = ?
+    `,
+      id,
+    );
+
+    await addToQueue(db, {
+      entity: "clientes",
+      entityId: id,
+      operation: "DELETE",
+    });
+
+    const queue = await listQueue(db);
+    console.log("SYNC QUEUE", queue);
+  });
 }

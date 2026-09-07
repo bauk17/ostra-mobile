@@ -1,10 +1,14 @@
-import { listarClientes } from "@/repositories/cliente-repository";
+import {
+  deletarCliente,
+  listarClientes,
+} from "@/repositories/cliente-repository";
 import type { Cliente } from "@/types/cliente";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
 import { useSQLiteContext } from "expo-sqlite";
 import { useCallback, useMemo, useState } from "react";
 import {
+  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -65,19 +69,31 @@ export default function ClientesScreen() {
     });
   }, [busca, clientes]);
 
+  function confirmarExclusao(cliente: Cliente) {
+    Alert.alert("Excluir cliente", `Deseja excluir ${cliente.nome}?`, [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Excluir",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deletarCliente(db, cliente.id);
+            setClientes((clientesAtuais) =>
+              clientesAtuais.filter(
+                (clienteAtual) => clienteAtual.id !== cliente.id,
+              ),
+            );
+          } catch (error) {
+            console.error("Erro ao excluir cliente:", error);
+          }
+        },
+      },
+    ]);
+  }
+
   function renderCliente({ item }: { item: Cliente }) {
     return (
-      <Pressable
-        style={styles.card}
-        onPress={() => {
-          router.push({
-            pathname: "/clientes/editar-cliente",
-            params: {
-              id: item.id,
-            },
-          });
-        }}
-      >
+      <View style={styles.card}>
         <View style={styles.cardTop}>
           <Text style={styles.documento}>ID: {item.id}</Text>
           <View style={[styles.statusBadge, styles.statusAtivo]}>
@@ -107,7 +123,34 @@ export default function ClientesScreen() {
 
           <Text style={styles.telefone}>{item.telefone || "Sem telefone"}</Text>
         </View>
-      </Pressable>
+
+        <View style={styles.actionRow}>
+          <Pressable
+            accessibilityLabel={`Editar ${item.nome}`}
+            style={styles.actionButton}
+            onPress={() => {
+              router.push({
+                pathname: "/clientes/editar-cliente",
+                params: {
+                  id: item.id,
+                },
+              });
+            }}
+          >
+            <Ionicons name="create-outline" size={18} color="#54F29A" />
+            <Text style={styles.editActionText}>Editar</Text>
+          </Pressable>
+
+          <Pressable
+            accessibilityLabel={`Excluir ${item.nome}`}
+            style={styles.actionButton}
+            onPress={() => confirmarExclusao(item)}
+          >
+            <Ionicons name="trash-outline" size={18} color="#F56B6B" />
+            <Text style={styles.deleteActionText}>Excluir</Text>
+          </Pressable>
+        </View>
+      </View>
     );
   }
 
@@ -371,6 +414,33 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     alignItems: "center",
+  },
+
+  actionRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 16,
+    marginTop: 10,
+  },
+
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+
+  editActionText: {
+    color: "#54F29A",
+    fontSize: 11,
+    fontWeight: "600",
+  },
+
+  deleteActionText: {
+    color: "#F56B6B",
+    fontSize: 11,
+    fontWeight: "600",
   },
 
   infoItem: {
