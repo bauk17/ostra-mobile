@@ -51,3 +51,34 @@ export async function listQueue(db: SQLiteDatabase) {
         `,
   );
 }
+
+export async function removeFromQueue(
+  db: SQLiteDatabase,
+  queueId: number,
+): Promise<void> {
+  await db.runAsync(
+    `
+      DELETE FROM sync_queue
+      WHERE id = ?
+    `,
+    queueId,
+  );
+}
+
+export async function markSyncError(
+  db: SQLiteDatabase,
+  queueId: number,
+  errorMessage: string,
+): Promise<void> {
+  await db.runAsync(
+    `
+      UPDATE sync_queue
+      SET
+        attempts = attempts + 1,
+        last_error = ?
+      WHERE id = ?
+    `,
+    errorMessage,
+    queueId,
+  );
+}

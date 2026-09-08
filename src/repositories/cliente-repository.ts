@@ -1,4 +1,4 @@
-import { addToQueue, listQueue } from "@/services/sync-queue";
+import { addToQueue } from "@/services/sync-queue";
 import type { Cliente } from "@/types/cliente";
 import type { SQLiteDatabase } from "expo-sqlite";
 
@@ -128,8 +128,5 @@ export async function deletarCliente(
       entityId: id,
       operation: "DELETE",
     });
-
-    const queue = await listQueue(db);
-    console.log("SYNC QUEUE", queue);
   });
 }
