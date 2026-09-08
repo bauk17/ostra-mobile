@@ -2,6 +2,7 @@ import {
   deletarCliente,
   listarClientes,
 } from "@/repositories/cliente-repository";
+import { syncQueue } from "@/services/sync-engine";
 import type { Cliente } from "@/types/cliente";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect } from "expo-router";
@@ -172,6 +173,17 @@ export default function ClientesScreen() {
           }}
         >
           <Ionicons name="add" size={28} color="#07131F" />
+        </Pressable>
+
+        <Pressable
+          onPress={() => syncQueue(db)}
+          style={{
+            padding: 15,
+            backgroundColor: "green",
+            borderRadius: 10,
+          }}
+        >
+          <Text style={{ color: "white" }}>SINCRONIZAR</Text>
         </Pressable>
       </View>
 
