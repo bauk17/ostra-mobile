@@ -1,7 +1,9 @@
 import { supabase } from "@/services/supabase";
 import type { Sync_ } from "@/types/sync";
 
-export async function syncCliente(item: Sync_): Promise<boolean> {
+export async function syncCliente(
+  item: Sync_,
+): Promise<{ success: true } | { success: false; error: string }> {
   if (item.operation === "INSERT") {
     const cliente = JSON.parse(item.payload!);
 
@@ -10,12 +12,17 @@ export async function syncCliente(item: Sync_): Promise<boolean> {
     if (error) {
       console.log("SYNC: erro ao inserir cliente", error);
 
-      return false;
+      return {
+        success: false,
+        error: error.message,
+      };
     }
 
     console.log("SYNC: cliente enviado com sucesso");
 
-    return true;
+    return {
+      success: true,
+    };
   }
 
   if (item.operation === "UPDATE") {
@@ -31,12 +38,15 @@ export async function syncCliente(item: Sync_): Promise<boolean> {
     if (error) {
       console.log("SYNC: erro ao atualizar cliente", error);
 
-      return false;
+      return {
+        success: false,
+        error: error.message,
+      };
     }
 
     console.log("SYNC: cliente atualizado com sucesso");
 
-    return true;
+    return { success: true };
   }
 
   if (item.operation === "DELETE") {
@@ -48,13 +58,16 @@ export async function syncCliente(item: Sync_): Promise<boolean> {
     if (error) {
       console.log("Sync: erro ao deletar cliente", error);
 
-      return false;
+      return {
+        success: false,
+        error: error.message,
+      };
     }
 
     console.log("Sync: cliente deletado com sucesso.");
 
-    return true;
+    return { success: true };
   }
 
-  return false;
+  return { success: false, error: "" };
 }

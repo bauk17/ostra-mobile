@@ -31,16 +31,31 @@ export async function migrateDbIfNeeded(db: SQLiteDatabase) {
     );
   `);
 
+  const colunasSyncQueue = await db.getAllAsync<{ name: string }>(
+    "PRAGMA table_info(sync_queue);",
+  );
+
+  const nomesColunasSyncQueue = new Set(
+    colunasSyncQueue.map((coluna) => coluna.name),
+  );
+
+  if (!nomesColunasSyncQueue.has("next_retry_at")) {
+    await db.execAsync("ALTER TABLE sync_queue ADD COLUMN next_retry_at TEXT;");
+  }
+
   const colunasClientes = await db.getAllAsync<{ name: string }>(
     "PRAGMA table_info(clientes);",
   );
-  const nomesColunas = new Set(colunasClientes.map((coluna) => coluna.name));
 
-  if (!nomesColunas.has("numero")) {
+  const nomesColunasClientes = new Set(
+    colunasClientes.map((coluna) => coluna.name),
+  );
+
+  if (!nomesColunasClientes.has("numero")) {
     await db.execAsync("ALTER TABLE clientes ADD COLUMN numero TEXT;");
   }
 
-  if (!nomesColunas.has("bairro")) {
+  if (!nomesColunasClientes.has("bairro")) {
     await db.execAsync("ALTER TABLE clientes ADD COLUMN bairro TEXT;");
   }
 }

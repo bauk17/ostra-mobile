@@ -1,3 +1,4 @@
+import { syncQueue } from "@/services/sync-engine";
 import { addToQueue } from "@/services/sync-queue";
 import type { Cliente } from "@/types/cliente";
 import type { SQLiteDatabase } from "expo-sqlite";
@@ -36,6 +37,8 @@ export async function criarCliente(
       payload: cliente,
     });
   });
+
+  await syncQueue(db);
 }
 
 export async function listarClientes(db: SQLiteDatabase): Promise<Cliente[]> {
@@ -108,6 +111,8 @@ export async function atualizarCliente(
       payload: cliente,
     });
   });
+
+  await syncQueue(db);
 }
 
 export async function deletarCliente(
@@ -129,4 +134,6 @@ export async function deletarCliente(
       operation: "DELETE",
     });
   });
+
+  await syncQueue(db);
 }
